@@ -4,6 +4,9 @@ const emailController = require("../controllers/emailController");
 const authMiddleware = require("../middleware/authMiddleware");
 
 // Obtener todos las emials adjuntados
+router.get("/getAllEmailss", emailController.getAllEmailss);
+
+// Obtener todos las emials adjuntados
 router.get("/getAllEmails", emailController.getAllEmails);
 
 // Obtener todos las emails link

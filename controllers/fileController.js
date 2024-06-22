@@ -1,7 +1,7 @@
 const fileService = require("../services/fileService");
 
 /* 
-POST -> http://localhost:8081/api/v1/files/addFile -> 
+POST -> https://api-siesa.in/api/v1/files/addFile -> 
 {
   "name": "file name",
   "description": "file description",
@@ -31,7 +31,7 @@ const addFile = async (req, res) => {
   }
 };
 
-/* PUT -> http://localhost:8081/api/v1/files/updateFiles/id -> 
+/* PUT -> https://api-siesa.in/api/v1/files/updateFiles/id -> 
 {
   "name": "file name",
   "description": "file description",
@@ -52,7 +52,7 @@ const updateFile = async (req, res) => {
   }
 };
 
-/* DELETE -> http://localhost:8081/api/v1/files/deleteFiles/id ->
+/* DELETE -> https://api-siesa.in/api/v1/files/deleteFiles/id ->
  */
 const deleteFile = async (req, res) => {
   const fileId = req.params.id;
@@ -65,7 +65,7 @@ const deleteFile = async (req, res) => {
   }
 };
 
-/* GET -> http://localhost:8081/api/v1/files/getAllFiles ->
+/* GET -> https://api-siesa.in/api/v1/files/getAllFiles ->
  */
 const getAllFiles = async (req, res) => {
   try {
@@ -76,7 +76,7 @@ const getAllFiles = async (req, res) => {
   }
 };
 
-/* GET -> http://localhost:8081/api/v1/files/file-details/:id */
+/* GET -> https://api-siesa.in/api/v1/files/file-details/:id */
 const getFileDetailsById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -101,7 +101,7 @@ const getFileDetailsById = async (req, res) => {
   }
 };
 
-/* GET -> http://localhost:8081/api/v1/users/getURLFile/:id */
+/* GET -> https://api-siesa.in/api/v1/users/getURLFile/:id */
 const getURLFileDetailsById = async (req, res) => {
   try {
     const { id } = req.params;

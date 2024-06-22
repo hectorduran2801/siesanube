@@ -1,7 +1,7 @@
 const RoleService = require("../services/roleService");
 
 /* 
-POST -> http://localhost:8081/api/v1/roles/addRole -> 
+POST -> https://api-siesa.in/api/v1/roles/addRole -> 
 {
   "name": "role name"
 }
@@ -17,7 +17,7 @@ const addRole = async (req, res) => {
   }
 };
 
-/* PUT -> http://localhost:8081/api/v1/roles/updateRole/id -> 
+/* PUT -> https://api-siesa.in/api/v1/roles/updateRole/id -> 
 {
   "name": "role name"
 }
@@ -34,7 +34,7 @@ const updateRole = async (req, res) => {
   }
 };
 
-/* DELETE -> http://localhost:8081/api/v1/roles/deleteRole/id ->
+/* DELETE -> https://api-siesa.in/api/v1/roles/deleteRole/id ->
  */
 const deleteRole = async (req, res) => {
   const roleId = req.params.id;
@@ -47,7 +47,7 @@ const deleteRole = async (req, res) => {
   }
 };
 
-/* GET -> http://localhost:8081/api/v1/roles/getAllRoles ->
+/* GET -> https://api-siesa.in/api/v1/roles/getAllRoles ->
  */
 const getAllRoles = async (req, res) => {
   try {

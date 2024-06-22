@@ -5,12 +5,16 @@ const File = require("./file");
 const UserFile = require("./userfile");
 const Discipline = require("./discipline");
 const Email = require("./email");
+const Folder = require("./folder");
 
 User.hasMany(UserFile, { foreignKey: "UserId" });
 UserFile.belongsTo(User, { foreignKey: "UserId" });
 
 File.hasMany(UserFile, { foreignKey: "FileId" });
 UserFile.belongsTo(File, { foreignKey: "FileId" });
+
+Folder.hasMany(UserFile, { foreignKey: "FolderId" });
+UserFile.belongsTo(Folder, { foreignKey: "FolderId" });
 
 User.belongsTo(Status, { onDelete: "CASCADE", onUpdate: "CASCADE" });
 Status.hasMany(User, { onDelete: "CASCADE", onUpdate: "CASCADE" });

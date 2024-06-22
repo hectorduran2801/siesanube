@@ -2,7 +2,7 @@ const UserService = require("../services/userService");
 const bcrypt = require("bcrypt");
 
 /* 
-POST -> http://localhost:8081/api/v1/users/register -> 
+POST -> https://api-siesa.in/api/v1/users/register -> 
 {
   "firstname": "user name",
   "lastname": "user lastname",
@@ -30,7 +30,7 @@ const registerUser = async (req, res) => {
   }
 };
 
-/* POST -> http://localhost:8081/api/v1/users/login -> 
+/* POST -> https://api-siesa.in/api/v1/users/login -> 
 {
   "email": "example@mail.com",
   "password": "12345"
@@ -46,7 +46,7 @@ const login = async (req, res) => {
   }
 };
 
-/* GET -> http://localhost:8081/api/v1/users/user-details */
+/* GET -> https://api-siesa.in/api/v1/users/user-details */
 const getUserDetails = async (req, res) => {
   try {
     const userDetails = await UserService.getUserDetails();
@@ -56,7 +56,7 @@ const getUserDetails = async (req, res) => {
   }
 };
 
-/* PUT -> http://localhost:8081/api/v1/users/update/id */
+/* PUT -> https://api-siesa.in/api/v1/users/update/id */
 const updateUser = async (req, res) => {
   const userId = req.params.id;
   const updatedFields = req.body;
@@ -69,7 +69,7 @@ const updateUser = async (req, res) => {
   }
 };
 
-/* DELETE -> http://localhost:8081/api/v1/users/delete/id */
+/* DELETE -> https://api-siesa.in/api/v1/users/delete/id */
 const deleteUser = async (req, res) => {
   const { id } = req.params;
 
@@ -81,7 +81,7 @@ const deleteUser = async (req, res) => {
   }
 };
 
-/* GET -> http://localhost:8081/api/v1/users/user-emails-details */
+/* GET -> https://api-siesa.in/api/v1/users/user-emails-details */
 const getUserEmailsDetails = async (req, res) => {
   try {
     const { email } = req.query;
@@ -104,7 +104,7 @@ const getUserEmailsDetails = async (req, res) => {
   }
 };
 
-/* GET -> http://localhost:8081/api/v1/users/user-details/:id */
+/* GET -> https://api-siesa.in/api/v1/users/user-details/:id */
 const getUserDetailsById = async (req, res) => {
   try {
     const { id } = req.params;

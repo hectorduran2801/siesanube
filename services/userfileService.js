@@ -2,6 +2,7 @@ const UserFile = require("../models/userfile");
 const User = require("../models/user");
 const File = require("../models/file");
 const Email = require("../models/email");
+const Folder = require("../models/folder");
 const Sequelize = require("sequelize");
 const sequelize = require("../config/database");
 const nodemailer = require("nodemailer");
@@ -10,22 +11,8 @@ const path = require("path");
 require("dotenv").config();
 const QRCode = require("qrcode");
 const jwt = require("jsonwebtoken");
-const secretKey = process.env.AUTH;
-
-function generateToken(userId, reason) {
-  var dateNow = new Date();
-  const payload = {
-    userId,
-    reason,
-    expiry: Math.floor(dateNow.getTime() + 60),
-  };
-  const token = jwt.sign(payload, secretKey);
-  return token;
-}
-
-function generateLink(token) {
-  return `http://localhost:3000/data/files/${token}`;
-}
+const archiver = require("archiver");
+const fsExtra = require("fs-extra");
 
 const UserFileService = {
   async getUsersAndFiles() {
@@ -71,6 +58,10 @@ ORDER BY "User"."id" ASC;
             model: File,
             attributes: ["id", "name", "description", "file", "type"],
           },
+          {
+            model: Folder,
+            attributes: ["id", "name", "description"],
+          },
         ],
         order: [
           ["reason", "ASC"],
@@ -79,8 +70,47 @@ ORDER BY "User"."id" ASC;
       });
 
       const files = userFilesByUserId.map((userFile) => userFile.File);
+      const folders = userFilesByUserId.map((userFile) => userFile.Folder);
 
-      return { files };
+      return { files, folders };
+    } catch (error) {
+      throw new Error(
+        "Error obteniendo archivos de usuario por ID: " + error.message
+      );
+    }
+  },
+
+  async getUserFilesByFolderId(id) {
+    try {
+      const folder = await Folder.findOne({
+        where: { id: id },
+        attributes: ["files"],
+      });
+
+      if (!folder) {
+        throw new Error("Carpeta no encontrada");
+      }
+
+      const fileDetailsRaw = JSON.parse(folder.files);
+
+      if (!Array.isArray(fileDetailsRaw)) {
+        throw new Error("La estructura de archivos no es la esperada");
+      }
+
+      const transformedFiles = fileDetailsRaw.map((fileName, index) => {
+        const extension = fileName.split(".").pop().toLowerCase();
+        return {
+          id: index + 1,
+          name: fileName,
+          extension: extension,
+        };
+      });
+
+      const fileDetails = {
+        files: transformedFiles,
+      };
+
+      return fileDetails;
     } catch (error) {
       throw new Error(
         "Error obteniendo archivos de usuario por ID: " + error.message
@@ -91,6 +121,7 @@ ORDER BY "User"."id" ASC;
   async getUserFilesByEmail(email, reason) {
     try {
       const user = await User.findOne({ where: { email } });
+
       if (!user) {
         throw new Error("Usuario no encontrado con este correo electrónico");
       }
@@ -98,8 +129,27 @@ ORDER BY "User"."id" ASC;
       const userId = user.id;
       const userFilesByUserId = await this.getUserFilesByUserId(userId, reason);
 
-      // logica de envios
-      await this.sendEmailWithFiles(email, userFilesByUserId.files);
+      const { files, folders } = userFilesByUserId;
+
+      console.log(folders);
+
+      // Enviar correo solo si hay archivos válidos
+      if (
+        files &&
+        Array.isArray(files) &&
+        files.some((file) => file !== null)
+      ) {
+        await this.sendEmailWithFiles(email, files);
+      }
+
+      // Enviar correo solo si hay carpetas válidas
+      if (
+        folders &&
+        Array.isArray(folders) &&
+        folders.some((folder) => folder !== null)
+      ) {
+        await this.sendEmailWithFolders(email, folders);
+      }
 
       return userFilesByUserId;
     } catch (error) {
@@ -163,10 +213,78 @@ ORDER BY "User"."id" ASC;
         subject: "Archivos - SIESA",
         html: `
         <p>Estimado usuario,</p>
-        <p>Adjuntamos los archivos solicitados en respuesta a tu solicitud.</p>
+        <p>Adjuntamos los archivos asignados.</p>
         <p></p>
         <p>Atentamente, <a href="${linkWeb}">SIESA</a></p>
       `,
+        attachments: attachments,
+      };
+
+      await transporter.sendMail(mailOptions);
+
+      await Email.create({
+        email: email,
+        type: 1,
+        message:
+          "¡Correo electrónico enviado exitosamente y registro agregado a la base de datos!",
+      });
+    } catch (error) {
+      console.error("Error al enviar el correo electrónico:", error);
+      throw new Error("Error al enviar el correo electrónico");
+    }
+  },
+
+  async sendEmailWithFolders(email, folders) {
+    try {
+      const linkWeb = `https://siesa.com.pa/`;
+
+      const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
+        auth: {
+          user: process.env.SMTP_EMAIL,
+          pass: process.env.SMTP_PASSWORD,
+        },
+      });
+
+      const baseDirectory = path.join(__dirname, "../public/files");
+
+      const attachments = [];
+
+      for (const folder of folders) {
+        const folderId = folder.id;
+        const folderFiles = await this.getUserFilesByFolderId(folderId);
+
+        for (const file of folderFiles.files) {
+          const fileName = file.name;
+          const filePath = path.join(baseDirectory, fileName);
+
+          if (fs.existsSync(filePath)) {
+            const fileContent = fs.readFileSync(filePath);
+
+            attachments.push({
+              filename: fileName,
+              content: fileContent,
+            });
+          } else {
+            throw new Error(
+              `El archivo ${fileName} no fue encontrado en el directorio.`
+            );
+          }
+        }
+      }
+
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: "Archivos - SIESA",
+        html: `
+          <p>Estimado usuario,</p>
+        <p>Adjuntamos los archivos asignados.</p>
+        <p></p>
+        <p>Atentamente, <a href="${linkWeb}">SIESA</a></p>
+        `,
         attachments: attachments,
       };
 
@@ -194,13 +312,28 @@ ORDER BY "User"."id" ASC;
       const userId = user.id;
       const userFilesByUserId = await this.getUserFilesByUserId(userId, reason);
 
-      // logica de envios
-      await this.sendEmailLinkWithFiles(
-        email,
-        userFilesByUserId.files,
-        userId,
-        reason
-      );
+      const { files, folders } = userFilesByUserId;
+
+      if (
+        files &&
+        Array.isArray(files) &&
+        files.some((file) => file !== null)
+      ) {
+        await this.sendEmailLinkWithFiles(email, files, userId, reason);
+      }
+
+      if (
+        folders &&
+        Array.isArray(folders) &&
+        folders.some((folder) => folder !== null)
+      ) {
+        await this.sendEmailLinkWithFilesFolders(
+          email,
+          folders,
+          userId,
+          reason
+        );
+      }
 
       return userFilesByUserId;
     } catch (error) {
@@ -210,36 +343,33 @@ ORDER BY "User"."id" ASC;
     }
   },
 
-  async generateQRCode(data) {
-    try {
-      const qrCodeDataURL = await QRCode.toDataURL(data);
-      return qrCodeDataURL;
-    } catch (error) {
-      console.error("Error al generar el código QR:", error);
-      throw new Error("Error al generar el código QR");
-    }
-  },
-
   async sendEmailLinkWithFiles(email, files, userId, reason) {
     try {
+      const dateNow = new Date();
+
+      // Generar el token JWT
+      const expiry = Math.floor(dateNow.getTime() + 3 * 24 * 60 * 60 * 1000);
+      const payload = { userId, reason, expiry };
+      const secretKey = process.env.AUTH;
+
+      const token = jwt.sign(payload, secretKey);
       // enlace
-      const token = generateToken(userId, reason);
-      const link = generateLink(token);
+
+      const link = `https://siesa-app.com/data/files/${token}`;
       const linkWeb = `https://siesa.com.pa/`;
 
-      // QR
-      const qrData = JSON.stringify({
-        id: userId,
-        email: email,
-        reason: reason,
-        files: files.map((file) => ({
-          name: file.name,
-          description: file.description,
-          file: file.file,
-          type: file.type,
-        })),
-      });
-      const qrImage = await this.generateQRCode(qrData);
+      let qrImage;
+      try {
+        qrImage = await QRCode.toDataURL(link);
+      } catch (error) {
+        console.error("Error al generar el código QR:", error);
+        throw new Error("Error al generar el código QR");
+      }
+
+      // Verificar que qrImage tenga el formato correcto
+      if (!qrImage.startsWith("data:image/png;base64,")) {
+        throw new Error("Formato incorrecto del código QR generado");
+      }
 
       const transporter = nodemailer.createTransport({
         host: "smtp.gmail.com",
@@ -256,10 +386,10 @@ ORDER BY "User"."id" ASC;
         to: email,
         subject: "Enlace - SIESA",
         html: `
-        <p>Estimado usuario,</p>
-        <p>Aquí está el enlace solicitado: <a href="${link}">Enlace</a></p>
-        <p></p>
-        <p>Atentamente, <a href="${linkWeb}">SIESA</a></p>
+         <p>Estimado usuario,</p>
+                <p>Enlace para acceder a los archivos asignados: <a href="${link}">Link</a></p>
+                <p></p>
+                <p>Atentamente, <a href="${linkWeb}">SIESA</a></p>
       `,
         attachments: [
           {
@@ -267,17 +397,83 @@ ORDER BY "User"."id" ASC;
             content: qrImage.split("base64,")[1],
             encoding: "base64",
           },
+        ],
+      };
+
+      await transporter.sendMail(mailOptions);
+
+      await Email.create({
+        email: email,
+        type: 2,
+        message:
+          "¡Correo electrónico enviado exitosamente y registro agregado a la base de datos!",
+      });
+    } catch (error) {
+      console.error("Error al enviar el correo electrónico:", error);
+      throw new Error("Error al enviar el correo electrónico");
+    }
+  },
+
+  async sendEmailLinkWithFilesFolders(email, folders, userId, reason) {
+    try {
+      const dateNow = new Date();
+
+      // Generar el token JWT
+      const expiry = Math.floor(dateNow.getTime() + 3 * 24 * 60 * 60 * 1000);
+      const payload = { userId, reason, expiry };
+      const secretKey = process.env.AUTH;
+
+      const token = jwt.sign(payload, secretKey);
+      // enlace
+
+      const link = `https://siesa-app.com/data/files/${token}`;
+      const linkWeb = `https://siesa.com.pa/`;
+
+      let qrImage;
+      try {
+        qrImage = await QRCode.toDataURL(link);
+      } catch (error) {
+        console.error("Error al generar el código QR:", error);
+        throw new Error("Error al generar el código QR");
+      }
+
+      // Verificar que qrImage tenga el formato correcto
+      if (!qrImage.startsWith("data:image/png;base64,")) {
+        throw new Error("Formato incorrecto del código QR generado");
+      }
+
+      const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 465,
+        secure: true,
+        auth: {
+          user: process.env.SMTP_EMAIL,
+          pass: process.env.SMTP_PASSWORD,
+        },
+      });
+
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: "Enlace - SIESA",
+        html: `
+         <p>Estimado usuario,</p>
+                <p>Enlace para acceder a los archivos asignados: <a href="${link}">Link</a></p>
+                <p></p>
+                <p>Atentamente, <a href="${linkWeb}">SIESA</a></p>
+      `,
+        attachments: [
           {
-            filename: "logosiesa.png",
-            path: path.join(__dirname, "../public/SiESAA.png"),
-            cid: "logosiesa_image",
+            filename: "qrCode.png",
+            content: qrImage.split("base64,")[1],
+            encoding: "base64",
           },
         ],
       };
 
       await transporter.sendMail(mailOptions);
 
-      const emailLog = await Email.create({
+      await Email.create({
         email: email,
         type: 2,
         message:
@@ -296,7 +492,7 @@ ORDER BY "User"."id" ASC;
       });
 
       if (!userFile) {
-        throw new Error("Usuario no encontrado.");
+        throw new Error("UserFile no encontrado.");
       }
 
       await userFile.destroy();
@@ -349,6 +545,49 @@ ORDER BY "User"."id" ASC;
       };
     } catch (error) {
       throw new Error("Error al asignar archivos: " + error.message);
+    }
+  },
+
+  async addUserFolders(reason, userId, folderIds) {
+    try {
+      const user = await User.findByPk(userId);
+
+      if (!user) {
+        throw new Error("Usuario no encontrada");
+      }
+
+      const existingReason = await UserFile.findOne({
+        where: { reason, UserId: userId },
+      });
+
+      if (existingReason) {
+        throw new Error("El motivo ya existe para este usuario.");
+      }
+
+      const newUserFiles = [];
+
+      for (const folderId of folderIds) {
+        const folder = await Folder.findByPk(folderId);
+
+        if (!folder) {
+          throw new Error("Carpeta no encontrada.");
+        }
+
+        const newUserFile = await UserFile.create({
+          reason,
+          UserId: userId,
+          FolderId: folderId,
+        });
+
+        newUserFiles.push(newUserFile);
+      }
+
+      return {
+        message: "Carpetas asignadas correctamente a la usuario",
+        userFiles: newUserFiles,
+      };
+    } catch (error) {
+      throw new Error("Error al asignar las carptas: " + error.message);
     }
   },
 };

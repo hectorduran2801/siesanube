@@ -1,6 +1,6 @@
 const disciplineService = require("../services/disciplineService");
 
-/* GET -> http://localhost:8081/api/v1/disciplines/getAllDisciplines ->
+/* GET -> https://api-siesa.in/api/v1/disciplines/getAllDisciplines ->
  */
 const getAllDisciplines = async (req, res) => {
   try {

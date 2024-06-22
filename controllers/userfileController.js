@@ -1,6 +1,6 @@
 const UserFileService = require("../services/userfileService");
 
-/* GET -> http://localhost:8081/api/v1/usersfiles/getAll */
+/* GET -> https://api-siesa.in/api/v1/usersfiles/getAll */
 const getUsersAndFiles = async (req, res) => {
   try {
     const allUsersAndFiles = await UserFileService.getUsersAndFiles();
@@ -10,7 +10,7 @@ const getUsersAndFiles = async (req, res) => {
   }
 };
 
-/* GET -> http://localhost:8081/api/v1/usersfiles/getUserFiles/:email/:reason */
+/* GET -> https://api-siesa.in/api/v1/usersfiles/getUserFiles/:email/:reason */
 const getUserFilesByUserId = async (req, res) => {
   try {
     const userId = req.params.id;
@@ -25,7 +25,20 @@ const getUserFilesByUserId = async (req, res) => {
   }
 };
 
-/* GET -> http://localhost:8081/api/v1/usersfiles/getUserFiles/send-email/:email */
+/* GET -> https://api-siesa.in/api/v1/usersfiles/getFilesForFolder/:id*/
+const getFilesByFolderId = async (req, res) => {
+  try {
+    const folderId = req.params.id;
+    const userFilesByFolderId = await UserFileService.getUserFilesByFolderId(
+      folderId
+    );
+    res.status(200).json(userFilesByFolderId);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/* GET -> https://api-siesa.in/api/v1/usersfiles/getUserFiles/send-email/:email */
 const sendUserFilesByEmail = async (req, res) => {
   try {
     const email = req.params.email;
@@ -40,10 +53,11 @@ const sendUserFilesByEmail = async (req, res) => {
   }
 };
 
-/* GET -> http://localhost:8081/api/v1/usersfiles/getUserFiles/send-email-link/:email */
+/* GET -> https://api-siesa.in/api/v1/usersfiles/getUserFiles/send-email-link/:email */
 const sendUserFilesByEmailLink = async (req, res) => {
   try {
-    const { email, reason } = req.body;
+    const email = req.params.email;
+    const { reason } = req.body;
 
     if (!email || !reason) {
       throw new Error(
@@ -55,13 +69,15 @@ const sendUserFilesByEmailLink = async (req, res) => {
       email,
       reason
     );
+
+    console.log(userFilesByEmailLink);
     res.status(200).json(userFilesByEmailLink);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-/* DELETE -> http://localhost:8081/api/v1/usersfiles/delete/id */
+/* DELETE -> https://api-siesa.in/api/v1/usersfiles/delete/id */
 const deleteUser = async (req, res) => {
   const { id, reason } = req.params;
 
@@ -73,12 +89,28 @@ const deleteUser = async (req, res) => {
   }
 };
 
-/* POST -> http://localhost:8081/api/v1/usersfiles/addUserFiles */
+/* POST -> https://api-siesa.in/api/v1/usersfiles/addUserFiles */
 const addUserFiles = async (req, res) => {
   const { reason, userId, fileIds } = req.body;
 
   try {
     const result = await UserFileService.addUserFiles(reason, userId, fileIds);
+    res.status(201).json(result);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+};
+
+/* POST -> https://api-siesa.in/api/v1/usersfiles/addUserFolders */
+const addUserFolders = async (req, res) => {
+  const { reason, userId, folderIds } = req.body;
+
+  try {
+    const result = await UserFileService.addUserFolders(
+      reason,
+      userId,
+      folderIds
+    );
     res.status(201).json(result);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -92,4 +124,6 @@ module.exports = {
   sendUserFilesByEmailLink,
   deleteUser,
   addUserFiles,
+  addUserFolders,
+  getFilesByFolderId,
 };

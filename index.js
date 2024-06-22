@@ -6,6 +6,7 @@ const fileRoutes = require("./routes/fileRoutes");
 const disciplineRoutes = require("./routes/disciplineRoute");
 const userFileRoutes = require("./routes/userfileRoutes");
 const emailRoutes = require("./routes/emailRoutes");
+const folderRoutes = require("./routes/folderRoutes");
 const upload = require("./middleware/uploadMiddleware");
 const sequelize = require("./config/database");
 const cors = require("cors");
@@ -19,13 +20,14 @@ const FileModel = require("./models/file");
 const UserFileModel = require("./models/userfile");
 const DisciplineModel = require("./models/discipline");
 const EmailModel = require("./models/email");
+const FolderModel = require("./models/folder");
 const Index = require("./models/index");
 const path = require("path");
 
 const app = express();
 
 const corsOptions = {
-  origin: ["*"],
+  origin: ["http://localhost:3000"],
   methods: ["GET", "PUT", "POST", "DELETE"],
   allowedHeaders: "*",
   exposedHeaders: ["Content-Length", "Content-Type", "Authorization"],
@@ -42,7 +44,7 @@ app.use("/api/v1/files", fileRoutes);
 app.use("/api/v1/usersfiles", userFileRoutes);
 app.use("/api/v1/disciplines", disciplineRoutes);
 app.use("/api/v1/emails", emailRoutes);
-
+app.use("/api/v1/folders", folderRoutes);
 
 // Conexion a la BD
 sequelize

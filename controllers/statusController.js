@@ -1,7 +1,7 @@
 const StatusService = require("../services/statusService");
 
 /* 
-POST -> http://localhost:8081/api/v1/statuses/addStatus -> 
+POST -> https://api-siesa.in/api/v1/statuses/addStatus -> 
 {
   "name": "status name",
 }
@@ -17,7 +17,7 @@ const addStatus = async (req, res) => {
   }
 };
 
-/* PUT -> http://localhost:8081/api/v1/statuses/updateStatus/id -> 
+/* PUT -> https://api-siesa.in/api/v1/statuses/updateStatus/id -> 
 {
   "name": "status name",
 }
@@ -34,7 +34,7 @@ const updateStatus = async (req, res) => {
   }
 };
 
-/* DELETE -> http://localhost:8081/api/v1/statuses/deleteStatus/id ->
+/* DELETE -> https://api-siesa.in/api/v1/statuses/deleteStatus/id ->
  */
 const deleteStatus = async (req, res) => {
   const statusId = req.params.id;
@@ -47,7 +47,7 @@ const deleteStatus = async (req, res) => {
   }
 };
 
-/* GET -> http://localhost:8081/api/v1/statuses/getAllStatuses ->
+/* GET -> https://api-siesa.in/api/v1/statuses/getAllStatuses ->
  */
 const getAllStatuses = async (req, res) => {
   try {

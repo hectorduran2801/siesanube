@@ -7,7 +7,6 @@ const UserFile = sequelize.define("UserFile", {
     primaryKey: true,
     autoIncrement: true,
   },
-
   reason: {
     type: DataTypes.STRING,
     allowNull: true,

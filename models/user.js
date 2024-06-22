@@ -7,11 +7,6 @@ const User = sequelize.define("User", {
     primaryKey: true,
     autoIncrement: true,
   },
-  /*  uid: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4, 
-    primaryKey: true,
-  }, */
   firstname: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -60,10 +55,10 @@ const User = sequelize.define("User", {
       },
     },
   },
-  authToken: {
+  authtoken: {
     type: DataTypes.STRING,
   },
-  lastLogin: {
+  lastlogin: {
     type: DataTypes.DATE,
   },
 });

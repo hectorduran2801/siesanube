@@ -12,6 +12,12 @@ router.get(
   userfileController.getUserFilesByUserId
 );
 
+// Obtener archivos por ID de folder
+router.get(
+  "/getFilesForFolder/:id",
+  userfileController.getFilesByFolderId
+);
+
 // Ruta para enviar email con archivos adjuntados
 router.post(
   "/getUserFiles/send-email/:email",
@@ -20,7 +26,7 @@ router.post(
 
 // Ruta para enviar email con enlace
 router.post(
-  "/getUserFiles/send-email-link",
+  "/getUserFiles/send-email-link/:email",
   userfileController.sendUserFilesByEmailLink
 );
 
@@ -29,5 +35,8 @@ router.delete("/delete/:id/:reason", userfileController.deleteUser);
 
 // Agregar userFile
 router.post("/addUserFiles", userfileController.addUserFiles);
+
+// Agregar userFile
+router.post("/addUserFolders", userfileController.addUserFolders);
 
 module.exports = router;

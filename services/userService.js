@@ -18,7 +18,7 @@ const UserService = {
 
       console.log(passwordMatch);
 
-      user.lastLogin = new Date();
+      user.lastlogin = new Date();
       await user.save();
 
       return { user, passwordMatch };
@@ -62,7 +62,7 @@ const UserService = {
         role: newUser.RoleId,
       });
 
-      newUser.authToken = token;
+      newUser.authtoken = token;
       await newUser.save();
 
       return {
@@ -83,7 +83,7 @@ const UserService = {
           [Sequelize.literal("CONCAT(firstname, ' ', lastname)"), "name"],
           "email",
           "password",
-          "lastLogin",
+          "lastlogin",
         ],
         include: [
           {
@@ -147,7 +147,7 @@ const UserService = {
       });
 
       // Actualiza el token
-      user.auth_token = token;
+      user.authtoken = token;
 
       await user.save();
 
